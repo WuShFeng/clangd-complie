@@ -9,7 +9,7 @@ RUN sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.l
 
 RUN apt-get update && \
     apt-get install -y --fix-missing git help2man perl python3 make autoconf g++ flex bison ccache \
-    libgoogle-perftools-dev numactl perl-doc bear libsdl2-dev libsdl2-image-dev&& \
+    libgoogle-perftools-dev numactl perl-doc bear libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev&& \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
