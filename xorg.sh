@@ -5,7 +5,6 @@ apt-get install -y --fix-missing \
 git clone https://github.com/LibVNC/x11vnc.git --depth 1 --branch 0.9.17
 cd x11vnc
 ./autogen.sh
-./configure
 make install -j `nproc`
 cd .. && rm -rf x11vnc
 
