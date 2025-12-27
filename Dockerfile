@@ -1,41 +1,55 @@
-FROM ubuntu:24.04
+FROM docker.io/library/archlinux:latest
 WORKDIR /workspace
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV PYENV_ROOT=/usr/local/share/pyenv
+ENV NVM_DIR=/usr/local/share/nvm
+ENV PATH=$PYENV_ROOT/bin:$PATH
 ENV XDG_RUNTIME_DIR=/tmp/xdg-runtime-dir
 ENV DISPLAY=:0
 # ENV WAYLAND_DISPLAY=wayland-0
 
-RUN sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list && \
-    sed -i 's/security.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list && \
-    sed -i 's@//.*archive.ubuntu.com@//mirrors.ustc.edu.cn@g' /etc/apt/sources.list.d/ubuntu.sources && \
-    sed -i 's/security.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/ubuntu.sources
+RUN echo -e "\n[archlinuxcn]\nServer = https://repo.archlinuxcn.org/\$arch" >> /etc/pacman.conf && \
+    pacman -Sy --noconfirm archlinuxcn-keyring && \
+    pacman-key --init && \
+    pacman-key --populate archlinux archlinuxcn && \
+    pacman -S --noconfirm archlinuxcn-mirrorlist-git && \
+    pacman -S --noconfirm yay
 
-RUN apt-get update && \
-    apt-get install -y --fix-missing\
-    git help2man perl python3 make autoconf g++ flex bison ccache vim lsof cmake\
-    libgoogle-perftools-dev numactl perl-doc bear libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev \
-    pkg-config meson ninja-build\
-    && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/*
+RUN yay -S --noconfirm vim nano git autoconf which
+
+RUN yay -S --noconfirm ccache base-devel && \
+    cp /usr/bin/ccache /usr/local/bin/ && \
+    ln -s ccache /usr/local/bin/gcc && \
+    ln -s ccache /usr/local/bin/g++
+
+RUN yay -S --noconfirm pyenv tk && \
+    pyenv install 3.13.11 && \
+    eval "$(pyenv init - bash)" && \
+    echo 'eval "$(pyenv init - bash)"' >> /etc/profile && \
+    pyenv global 3.13.11
 
 COPY verilator.sh ./
 RUN chmod +x verilator.sh && ./verilator.sh
 
-COPY xorg.sh ./
-COPY xorg.conf /etc/X11/xorg.conf.d/10-headless.conf
-RUN chmod +x xorg.sh && ./xorg.sh
+COPY Xheadless.conf /etc/X11/xorg.conf.d/Xheadless.conf
+COPY Xwrapper.config /etc/X11/Xwrapper.config
+RUN yay -S --noconfirm x11vnc xorg-server xf86-video-dummy && \
+    git clone https://github.com/novnc/noVNC.git /usr/share/novnc --depth 1 --branch v1.6.0 && \
+    eval "$(pyenv init - bash)" && \
+    pip install websockify
 
-# COPY weston.sh ./
-# RUN chmod +x weston.sh && ./weston.sh
+RUN yay -S --noconfirm nvm && \
+    source /usr/share/nvm/init-nvm.sh
 
-RUN rm -rf ./* ./.[!.]* ./..?* 
 RUN if id -u 1000 >/dev/null 2>&1; then \
-    old_user=$(id -un 1000); \
-    usermod -l devuser -m -d /home/devuser $old_user; \
-    chown -R 1000:1000 /home/devuser; \
+        old_user=$(id -un 1000); \
+        usermod -l devuser -m -d /home/devuser $old_user; \
+        groupmod -n devuser $old_user; \
+        chown -R devuser:devuser /home/devuser; \
     else \
-    useradd -m -u 1000 devuser; \
-    fi
+        groupadd -g 1000 devuser && useradd -m -u 1000 -g devuser devuser; \
+    fi && \
+    mkdir -p ${XDG_RUNTIME_DIR} && \
+    chown devuser:devuser ${XDG_RUNTIME_DIR}
+
 EXPOSE 6080

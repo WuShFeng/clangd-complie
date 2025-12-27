@@ -1,7 +1,7 @@
-Xorg $DISPLAY -config /etc/X11/xorg.conf.d/10-headless.conf \
+nohup Xorg $DISPLAY -config /etc/X11/xorg.conf.d/Xheadless.conf \
     -nolisten tcp -background none \
     > /tmp/xorg.log 2>&1 &
-openbox \
+nohup openbox \
     > /tmp/openbox.log 2>&1 &
 # weston \
 #     --backend=x11-backend.so \
@@ -15,8 +15,8 @@ openbox \
 #     -AlwaysShared \
 #     -rfbport 5900 \
 #     > /tmp/xvnc.log 2>&1 &
-x11vnc -display $DISPLAY -nopw -rfbport 5900 -forever -shared > /tmp/x11vnc.log 2>&1 &
-websockify --web /usr/share/novnc \
+nohup x11vnc -display $DISPLAY -nopw -rfbport 5900 -forever -shared -ncache -noshm > /tmp/x11vnc.log 2>&1 &
+
+nohup websockify --web /usr/share/novnc \
     6080 localhost:5900 \
     > /tmp/novnc.log 2>&1 &
-
