@@ -15,7 +15,8 @@ RUN echo -e "\n[archlinuxcn]\nServer = https://repo.archlinuxcn.org/\$arch" >> /
     pacman -S --noconfirm archlinuxcn-mirrorlist-git && \
     pacman -S --noconfirm yay
 
-RUN yay -S --noconfirm vim nano git autoconf which
+RUN yay -S --noconfirm vim nano git autoconf which \
+    sdl2_image sdl2_ttf sdl2-compat
 
 RUN yay -S --noconfirm ccache base-devel && \
     cp /usr/bin/ccache /usr/local/bin/ && \
@@ -33,13 +34,15 @@ RUN chmod +x verilator.sh && ./verilator.sh
 
 COPY Xheadless.conf /etc/X11/xorg.conf.d/Xheadless.conf
 COPY Xwrapper.config /etc/X11/Xwrapper.config
+COPY display.sh /usr/local/bin/display
 RUN yay -S --noconfirm x11vnc xorg-server xf86-video-dummy && \
     git clone https://github.com/novnc/noVNC.git /usr/share/novnc --depth 1 --branch v1.6.0 && \
     eval "$(pyenv init - bash)" && \
     pip install websockify
 
 RUN yay -S --noconfirm nvm && \
-    source /usr/share/nvm/init-nvm.sh
+    source /usr/share/nvm/init-nvm.sh && \
+    echo "source /usr/share/nvm/init-nvm.sh" >> /etc/profile
 
 RUN if id -u 1000 >/dev/null 2>&1; then \
         old_user=$(id -un 1000); \

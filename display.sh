@@ -1,3 +1,4 @@
+#!/bin/bash
 nohup Xorg $DISPLAY -config /etc/X11/xorg.conf.d/Xheadless.conf \
     -nolisten tcp -background none \
     > /tmp/xorg.log 2>&1 &
